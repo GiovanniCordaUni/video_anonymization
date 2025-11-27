@@ -1,0 +1,101 @@
+########################################
+# PYTHON BASICS
+########################################
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.log
+
+# environments
+.env
+.venv/
+venv/
+env/
+
+# installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+
+########################################
+# VS CODE
+########################################
+.vscode/
+.history/
+*.code-workspace
+
+
+########################################
+# ONEDRIVE / WINDOWS FILES
+########################################
+desktop.ini
+Thumbs.db
+ehthumbs.db
+.DS_Store
+*.lnk
+
+
+########################################
+# NOTEBOOKS
+########################################
+# elimina i checkpoint automatici dei notebook
+.ipynb_checkpoints/
+
+
+########################################
+# PROJECT SPECIFIC DIRECTORIES
+########################################
+
+# data non versionabile (input + output + sample)
+data/input/
+data/output/
+data/samples/
+data/**/*
+
+# modelli YOLOv8 (pesanti)
+models/
+models/**/*
+
+# video pesanti (se finissero fuori da data/)
+*.mp4
+*.avi
+*.mov
+*.mkv
+
+# immagini generate (fuori da data/)
+*.png
+*.jpg
+*.jpeg
+*.bmp
+
+# eventuali file temporanei creati dal progetto
+tmp/
+temp/
+cache/
+*.cache
+
+
+########################################
+# PYTHON BUILD / DIST
+########################################
+build/
+dist/
+*.egg-info/
+*.egg
+
+
+########################################
+# TEST FILES
+########################################
+# (puoi togliere questo se vuoi versionare tutto in tests/)
+tests/__pycache__/
+
+
+########################################
+# OTHER
+########################################
+*.bak
+*.tmp
+*.old
