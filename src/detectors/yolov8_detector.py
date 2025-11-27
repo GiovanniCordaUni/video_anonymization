@@ -95,5 +95,6 @@ class YoloV8Detector:
 
     # estrae solo le coordinate delle bounding box dalle rilevazioni da passare all'anonymizer
     def detect_boxes(self, frame: np.ndarray):
+        
         detections = self.detect(frame)
         return [(d.x1, d.y1, d.x2, d.y2) for d in detections]
