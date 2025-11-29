@@ -4,8 +4,6 @@ import numpy as np
 from ultralytics import YOLO
 
 @dataclass
-
-# semplice classe per rappresentare una rilevazione
 class Detection:
     """
     Rappresenta una rilevazione di oggetto.
