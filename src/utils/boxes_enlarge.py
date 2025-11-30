@@ -15,7 +15,7 @@ def enlarge_box(box, scale=1.3):
     # centro
     cx = x1 + w / 2
     cy = y1 + h / 2
-
+     
     # nuovo box scalato
     new_w = w * scale
     new_h = h * scale
