@@ -38,7 +38,8 @@ def create_video_writer(output_path, fps, frame_size):
 
     Ritorna l'oggetto VideoWriter di OpenCV.
     """
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec per file mp4 (tra i più comuni)
+    #fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec per file mp4 (tra i più comuni)
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Codec per file avi (garante maggiore compatibilità)
     os.makedirs(os.path.dirname(output_path), exist_ok=True) # crea la cartella se non esiste
     out = cv2.VideoWriter(output_path, fourcc, fps, frame_size)
     
