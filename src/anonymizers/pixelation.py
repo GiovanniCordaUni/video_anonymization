@@ -11,7 +11,7 @@ def apply_pixelation(frame, box, pixel_size=10):
         pixel_size: La dimensione dei pixel per l'effetto di pixelazione. Nota: più grande è il valore, più forte è l'effetto di pixelazione.
     """
 
-    x1, y1, x2, y2 = box
+    x1, y1, x2, y2 = map(int, box) #cast a int per sicurezza
     face = frame[y1:y2, x1:x2]
 
     # abbassa la risoluzione della ROI
