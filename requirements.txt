@@ -7,3 +7,4 @@ pillow
 tqdm
 scipy
 pyyaml
+git+https://github.com/elliottzheng/face-detection.git@master
