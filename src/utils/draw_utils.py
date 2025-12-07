@@ -1,6 +1,6 @@
 import cv2
 from typing import List
-from src.detectors.yolov8_detector import Detection
+from src.detectors.yolo.yolov8_detector import Detection
 
 def draw_boxes(frame, detections: List[Detection], color=(0, 255, 0), thickness=2):
     """
