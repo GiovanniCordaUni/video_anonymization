@@ -75,3 +75,42 @@ def organize_videos(input_dir: str, output_dir: str):
     print("\nMappa soggetti:")
     for name, sid in sorted(subject_to_id.items(), key=lambda x: x[1]):
         print(f"  soggetto{sid:03d}  <-  {name}")
+
+def organize_single_video(video_path: str, output_dir: str, subject_to_id=None, next_id=1):
+    """
+    Riorganizza un singolo file video nella struttura:
+
+        output_dir/soggettoNNN/NNN_exercise_session.mp4
+
+    subject_to_id e next_id sono opzionali:
+    - se NON passati: gestisce un solo file isolato
+    - se passati: permette di integrare più chiamate senza perdere coerenza
+    """
+    src = Path(video_path)
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    # Creo la mappa soggetto->ID se non esiste
+    if subject_to_id is None:
+        subject_to_id = {}
+
+    exercise, subject, session = _parse_name(src)
+
+    # Assegna ID soggetto
+    if subject not in subject_to_id:
+        subject_to_id[subject] = next_id
+        next_id += 1
+
+    sid = subject_to_id[subject]
+    sid_str = f"{sid:03d}"
+
+    subject_dir = output_path / f"soggetto{sid_str}"
+    subject_dir.mkdir(parents=True, exist_ok=True)
+
+    dst_name = f"{sid_str}_{exercise}_{session}{src.suffix}"
+    dst = subject_dir / dst_name
+
+    print(f"{src.name} -> {subject_dir.name}/{dst_name}")
+    shutil.copy2(src, dst)
+
+    return subject_to_id, next_id
