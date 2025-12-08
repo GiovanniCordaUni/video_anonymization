@@ -1,7 +1,7 @@
 from typing import List, Optional
 import numpy as np
 
-from face_detection import RetinaFace  # wrapper RetinaFace ready-to-use
+from face_detection import RetinaFace  # libreria RetinaFace
 from src.detectors.detection_types import Detection
 
 
@@ -22,8 +22,8 @@ class RetinaFaceDetector:
         resize: float = 1.0,
         max_size: int = 1080,
     ):
-        # gpu_id: 0 = usa GPU 0, -1 = CPU
-        gpu_id = 0 if device.startswith("cuda") else -1
+        # Configurazione dispositivo di calcolo (0 per GPU 0, -1 per CPU)
+        gpu_id = 0 if device.lower().startswith("cuda") else -1
 
         self.device = device
         self.conf_threshold = conf_threshold
@@ -37,12 +37,10 @@ class RetinaFaceDetector:
     def detect(self, frame: np.ndarray) -> List[Detection]:
         """
         Esegue il rilevamento su un frame (BGR, np.ndarray HxWx3)
-        e ritorna una lista di Detection, compatibile con YoloV8Detector.
+        e ritorna una lista di Detection del tipo: [x1, y1, x2, y2, confidence, class_id]
         """
 
-        # La libreria accetta immagini HxWx3, 0–255. Possiamo passare
-        # direttamente il frame OpenCV; se necessario in futuro puoi
-        # convertire in RGB.
+        # La libreria accetta immagini HxWx3, 0–255.
         faces = self.model(
             frame,
             threshold=self.conf_threshold,
@@ -74,7 +72,7 @@ class RetinaFaceDetector:
 
     def detect_boxes(self, frame: np.ndarray):
         """
-        Stessa utility di YoloV8Detector: restituisce solo i box.
+        Utilità: esegue il rilevamento e ritorna solo le bounding box
         """
         detections = self.detect(frame)
         return [(d.x1, d.y1, d.x2, d.y2) for d in detections]
