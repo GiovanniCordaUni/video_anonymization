@@ -12,11 +12,11 @@ class YuNetDetector:
     def __init__(
         self,
         model_path: str,
-        input_size: Tuple[int, int] = (320, 320),
-        score_threshold: float = 0.6,
-        nms_threshold: float = 0.3,
-        top_k: int = 5000,
-        face_class_id: int = 0,
+        input_size: Tuple[int, int] = (320, 320), #640x640 più accuratezza e meno falsi negativi; utile per video ad alta risoluzione
+        score_threshold: float = 0.9, #soglia di confidenza minima più alta per ridurre i falsi positivi
+        nms_threshold: float = 0.3, #soglia NMS più bassa per eliminare meglio le sovrapposizioni
+        top_k: int = 5000, #numero massimo di detection da considerare
+        face_class_id: int = 0, #class_id da assegnare alle facce (es. 0)
     ):
         """
         Args:
@@ -54,6 +54,7 @@ class YuNetDetector:
             self.detector.setInputSize(self.input_size)
 
         # detect ritorna (retval, faces)
+        # retval: bool che indica se ha trovato facce, NOTA: non usato su per yunet (sempre 0)
         # faces: N x 15 -> [x, y, w, h, score, l0x, l0y, ..., l4x, l4y]
         # l0..l4 sono i landmark degli occhi, naso, bocca
         retval, faces = self.detector.detect(frame)
