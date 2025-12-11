@@ -63,12 +63,8 @@ class RetinaFaceDetector:
         """
 
         # La libreria accetta immagini HxWx3, 0–255.
-        faces = self.model(
-            frame,
-            threshold=self.conf_threshold,
-            resize=self.resize,
-            max_size=self.max_size,
-        )
+        faces = self.model(frame)
+        
         # faces è una lista di (box, landmarks, score)
         detections: List[Detection] = []
 
