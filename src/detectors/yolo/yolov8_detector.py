@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, List, Optional, Mapping, any
 import numpy as np
 from ultralytics import YOLO
 from src.detectors.detection_types import Detection 
@@ -13,6 +13,21 @@ class YoloV8Detector:
             conf_threshold (float): Soglia di confidenza per filtrare le rilevazioni.
             device (str): Dispositivo su cui eseguire il modello ("cpu" o "cuda").
             classes (Optional[List[int]]): Lista opzionale di ID di classi da rilevare.
+
+        Può essere inizializzato in due modi:
+
+            1) In modo esplicito, passando i parametri:
+                detector = YoloV8Detector(
+                    model_path="models/yolov8/yolov8n-face.pt",
+                    conf_threshold=0.5,
+                    device="cpu",
+                    classes=[0],
+                )
+
+            2) Dal file di configurazione (sezione detector.yolov8):
+                cfg = load_config("config.yaml")
+                yolov8_cfg = cfg["detector"]["yolov8"]
+                detector = YoloV8Detector.from_config(yolov8_cfg)
     """
 
     # inizializza il rilevatore
@@ -23,6 +38,36 @@ class YoloV8Detector:
         self.device = device
         self.classes = classes
         self.model: Optional[YOLO] = None
+
+
+    @classmethod
+    def from_config(cls, cfg: Mapping[str, Any]) -> "YoloV8Detector":
+        """
+        Inizializza il detector leggendo i parametri da un dict di configurazione,
+        tipicamente derivato dalla sezione `detector.yolov8` del config.yaml.
+
+        Esempio di cfg atteso:
+
+        detector:
+        yolov8:
+            model_path: "models/yolov8/yolov8n-face.pt"
+            conf_threshold: 0.5
+            device: "cpu"
+            # classes: [0]  # opzionale
+
+        """
+        model_path = cfg["model_path"]
+        conf_threshold = float(cfg.get("conf_threshold", 0.5))
+        device = cfg.get("device", "cpu")
+        classes = cfg.get("classes")  # opzionale, può essere None
+
+        return cls(
+            model_path=model_path,
+            conf_threshold=conf_threshold,
+            device=device,
+            classes=classes,
+        )
+        
 
     # carica il modello, se non è già stato caricato
     def _ensure_model_loaded(self):
