@@ -1,0 +1,21 @@
+paths:
+  input_videos: "data/input_videos"
+  output_videos: "data/output_videos"
+  ground_truth: "data/ground_truth"
+  predictions: "data/predictions"
+  results: "data/results"
+
+detector:
+  name: "yolov8"       # alternative: yolov8, yolov12, yunet, retinaface
+  model_path: "models/yolov8/yolov8n-face.pt"
+  conf_threshold: 0.5
+  device: "cpu"
+
+evaluation:
+  iou_threshold: 0.5
+  allow_multiple_predictions: true
+
+anonymizer:
+  type: "gaussian_blur"    # blur / pixelate / block / or oval versions
+  blur_kernel: 35
+  pixel_size: 20
