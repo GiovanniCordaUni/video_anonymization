@@ -1,12 +1,13 @@
 import cv2
 import numpy as np
-from typing import List, Tuple
+from typing import Any, List, Mapping, Tuple
 from src.detectors.detection_types import Detection
 
 
 class YuNetDetector:
     """
     Wrapper per il face detector YuNet (OpenCV Zoo) che restituisce Detection.
+    Supporta inizializzazione manuale oppure tramite config.yaml.
     """
 
     def __init__(
@@ -37,6 +38,25 @@ class YuNetDetector:
             score_threshold=score_threshold,
             nms_threshold=nms_threshold,
             top_k=top_k,
+        )
+
+    @classmethod
+    def from_config(cls, cfg: Mapping[str, Any]) -> "YuNetDetector":
+        """
+        Crea un'istanza del detector leggendo i parametri dal dizionario
+        derivante dalla sezione detector.yunet del config.yaml.
+        """
+
+        model_path = cfg["model_path"]
+        input_size = tuple(cfg.get("input_size", (320, 320)))
+
+        return cls(
+            model_path=model_path,
+            input_size=input_size,
+            score_threshold=float(cfg.get("score_threshold", 0.9)),
+            nms_threshold=float(cfg.get("nms_threshold", 0.3)),
+            top_k=int(cfg.get("top_k", 5000)),
+            face_class_id=int(cfg.get("face_class_id", 0)),
         )
 
     def detect(self, frame: np.ndarray) -> List[Detection]:
