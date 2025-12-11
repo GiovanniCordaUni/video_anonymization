@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Mapping, Any
 import numpy as np
 
 from .yolov8_detector import YoloV8Detector
@@ -29,6 +29,28 @@ class YoloV12Detector(YoloV8Detector):
     ):
         # richiama il costruttore del wrapper YoloV8, riutilizzando la logica
         super().__init__(
+            model_path=model_path,
+            conf_threshold=conf_threshold,
+            device=device,
+            classes=classes,
+        )
+
+    @classmethod
+    def from_config(cls, cfg: Mapping[str, Any]) -> "YoloV12Detector":
+        """
+        Inizializza YoloV12Detector da un dizionario di configurazione
+        (tipicamente cfg["detector"]["yolov12"]).
+
+        Esempio:
+            yolov12_cfg = config["detector"]["yolov12"]
+            detector = YoloV12Detector.from_config(yolov12_cfg)
+        """
+        model_path = cfg["model_path"]
+        conf_threshold = float(cfg.get("conf_threshold", 0.5))
+        device = cfg.get("device", "cpu")
+        classes = cfg.get("classes")  # opzionale
+
+        return cls(
             model_path=model_path,
             conf_threshold=conf_threshold,
             device=device,
