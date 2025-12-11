@@ -5,17 +5,46 @@ paths:
   predictions: "data/predictions"
   results: "data/results"
 
+video:
+  frame_stride: 1          # 1 = usa tutti i frame
+  resize_width: null       # oppure un valore intero, es. 1280
+  resize_height: null    # oppure un valore intero, es. 720
+  output_suffix: "_anon"   # suffisso per i video anonimizzati
+
 detector:
-  name: "yolov8"       # alternative: yolov8, yolov12, yunet, retinaface
-  model_path: "models/yolov8/yolov8n-face.pt"
-  conf_threshold: 0.5
-  device: "cpu"
+  active: "yolov8"         # yolov8 / yolov12 / yunet / retinaface
+
+  yolov8:
+    model_path: "models/yolov8/yolov8n-face.pt"
+    conf_threshold: 0.5
+    device: "cpu"
+
+  yolov12:
+    model_path: "models/yolov12/yolov12n-face.pt"
+    conf_threshold: 0.5
+    device: "cpu"
+
+  yunet:
+    model_path: "models/yunet/face_detection_yunet_2022mar.onnx"
+    score_threshold: 0.9
+    nms_threshold: 0.3
+    top_k: 5000
+    face_class_id: 0
+
+  retinaface:
+    conf_threshold: 0.8     # soglia di confidenza
+    device: "cpu"           # "cpu" oppure "cuda"
+    resize: 1.0             # parametro del wrapper per ridimensionare l'immagine di input
+    max_size: 1080          # parametro per ridimensionare internamente
 
 evaluation:
-  iou_threshold: 0.5
+  iou_threshold: 0.5        # soglia IoU per TP
+  score_threshold: 0.5      # scarta predizioni con conf < score_threshold
   allow_multiple_predictions: true
 
 anonymizer:
-  type: "gaussian_blur"    # blur / pixelate / block / or oval versions
+  type: "gaussian_blur"     # gaussian_blur / pixelate / block / oval_blur ...
   blur_kernel: 35
   pixel_size: 20
+  face_margin: 0.2          # allarga la box del 20%
+  use_ellipse: false        # true per versione ovale dell'anonimizzazione
