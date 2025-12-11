@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, Mapping, any
+from typing import Any, List, Optional, Mapping
 import numpy as np
 from ultralytics import YOLO
 from src.detectors.detection_types import Detection 
