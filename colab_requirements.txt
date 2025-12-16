@@ -1,0 +1,17 @@
+# Core
+numpy>=1.23
+PyYAML>=6.0
+
+# OpenCV (YuNet + video I/O)
+opencv-python>=4.8
+
+# YOLOv8 / YOLOv12
+ultralytics>=8.1.0
+torch>=2.0
+torchvision>=0.15
+
+# RetinaFace
+face-detection>=0.2.2
+
+# Utils
+tqdm>=4.65
