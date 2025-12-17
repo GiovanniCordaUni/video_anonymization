@@ -12,7 +12,7 @@ video:
   output_suffix: "_anon"   # suffisso per i video anonimizzati
 
 detector:
-  active: "retinaface"         # yolov8 / yolov12 / yunet / retinaface
+  active: "yolov8"         # yolov8 / yolov12 / yunet / retinaface
 
   yolov8:
     model_path: "models/yolov8/yolov8n-face.pt"

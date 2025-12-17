@@ -3,10 +3,9 @@
 # =========================
 paths:
   # Video organizzati (soggettoNNN/NNN_codex_session.mp4)
-  input_videos: "/content/drive/MyDrive/tesi/data/organized_videos"
-
+  input_videos: "/content/organized_videos"
   # Ground truth YOLO per frame
-  ground_truth: "/content/drive/MyDrive/tesi/data/ground_truth"
+  ground_truth: "/content/ground_truth"
 
   # Risultati benchmark (txt / csv)
   results: "/content/drive/MyDrive/tesi/data/results"
@@ -37,13 +36,13 @@ detector:
   yolov8:
     model_path: "models/yolov8/yolov8n-face.pt"
     conf_threshold: 0.5
-    device: "cpu"
+    device: "cuda"
     classes: null
 
   yolov12:
     model_path: "models/yolov12/yolov12n-face.pt"
     conf_threshold: 0.5
-    device: "cpu"
+    device: "cuda"
     classes: null
 
 
@@ -82,7 +81,7 @@ evaluation:
   matching: "iou"
   
   # IoU threshold per considerare una detection come TP
-  iou_threshold: 0.2
+  iou_threshold: 0.5
 
   # confidenza minima della predizione
   score_threshold: 0.5
