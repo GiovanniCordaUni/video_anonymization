@@ -34,6 +34,47 @@ def compute_iou(box1: Box, box2: Box) -> float:
     iou = inter_area / union
     return iou
 
+def evaluate_frame_detections_center_based(
+    gt_boxes: List[Box],
+    pred_boxes: List[Box],
+):
+    """
+    Valutazione center-based:
+    - TP: il centro della predizione cade dentro una GT
+    - FP: predizioni che non cadono in nessuna GT
+    - FN: GT non matchate da nessuna predizione
+    """
+
+    gt_used = set()
+    tp = 0
+    fp = 0
+
+    for pred in pred_boxes:
+        # centro della predizione
+        cx = (pred[0] + pred[2]) / 2.0
+        cy = (pred[1] + pred[3]) / 2.0
+
+        matched = False
+
+        for gt_idx, gt in enumerate(gt_boxes):
+            if gt_idx in gt_used:
+                continue
+
+            x1, y1, x2, y2 = gt
+            if x1 <= cx <= x2 and y1 <= cy <= y2:
+                tp += 1
+                gt_used.add(gt_idx)
+                matched = True
+                break
+
+        if not matched:
+            fp += 1
+
+    fn = len(gt_boxes) - len(gt_used)
+
+    return tp, fp, fn
+
+
 def evaluate_frame_detections(
     gt_boxes: List[Box],
     pred_boxes: List[Box],
