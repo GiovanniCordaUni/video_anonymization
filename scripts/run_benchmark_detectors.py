@@ -24,6 +24,7 @@ def write_benchmark_header(
     score_threshold: float,
     allow_multi: bool,
     frame_stride: int,
+    matching: str,
 ):
     f.write("Questo test è stato eseguito nelle seguenti condizioni:\n")
     f.write(f"- Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -203,8 +204,8 @@ def benchmark_detector(config_path: str):
             iou_threshold=iou_threshold,
             score_threshold=score_threshold,
             allow_multi=allow_multi,
-            matching=matching,
             frame_stride=frame_stride,
+            matching=matching,
         )
         f.write("Detector benchmark results\n\n")
         f.write(f"Config: {config_path}\n")
