@@ -3,7 +3,7 @@ from pathlib import Path
 from datetime import datetime
 import platform
 import sys
-from datetime import datetime
+import time
 
 from src.pipeline.video_pipeline import load_config, build_detector_from_config
 from src.utils.io_utils import open_video
@@ -17,7 +17,6 @@ from src.evaluation.metrics import (
 def write_benchmark_header(
     f,
     detector_name: str,
-    model_path: str,
     num_videos: int,
     total_frames: int,
     iou_threshold: float,
@@ -29,12 +28,13 @@ def write_benchmark_header(
     f.write("Questo test è stato eseguito nelle seguenti condizioni:\n")
     f.write(f"- Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     f.write(f"- Hardware: {platform.processor()} (CPU)\n")
+    f.write(f"- Platform: {platform.platform()}\n")
     f.write(f"- Sistema operativo: {platform.system()} {platform.release()}\n")
     f.write(f"- Python: {sys.version.split()[0]}\n")
     f.write(f"- Detector: {detector_name}\n")
-    f.write(f"- Modello: {model_path}\n\n")
 
     f.write("- Parametri:\n")
+    f.write(f"  - Matching method: {matching}\n")
     f.write(f"  - Score threshold: {score_threshold}\n")
     f.write(f"  - IoU threshold: {iou_threshold}\n")
     f.write(f"  - Allow multiple predictions: {allow_multi}\n")
@@ -84,8 +84,9 @@ def benchmark_detector(config_path: str):
     detector = build_detector_from_config(cfg)
 
     per_frame_stats = []
+    t0 = time.perf_counter()
 
-    # 3) Loop sui video nella cartella input_videos
+    # Loop sui video nella cartella input_videos
     video_files = sorted(
     p for p in input_videos_dir.rglob("*")
     if p.is_file() and p.suffix.lower() in {".mp4", ".avi", ".mov", ".mkv"}
@@ -183,6 +184,13 @@ def benchmark_detector(config_path: str):
     # Aggrega risultati
     agg = aggregate_metrics(per_frame_stats)
 
+    t1 = time.perf_counter()
+    elapsed_s = t1 - t0
+
+    avg_ms_per_frame = (elapsed_s / total_frames_evaluated) * 1000 if total_frames_evaluated > 0 else 0.0
+    avg_fps = (total_frames_evaluated / elapsed_s) if elapsed_s > 0 else 0.0
+
+
     print("\n========== RISULTATI GLOBALI ==========")
     print(f"TP:        {agg['tp']}")
     print(f"FP:        {agg['fp']}")
@@ -198,15 +206,15 @@ def benchmark_detector(config_path: str):
         write_benchmark_header(
             f=f,
             detector_name=det_name,
-            model_path=detector.model_path,
             num_videos=len(video_files),
-            total_frames=total_frames,
+            total_frames=total_frames_dataset,
             iou_threshold=iou_threshold,
             score_threshold=score_threshold,
             allow_multi=allow_multi,
             frame_stride=frame_stride,
             matching=matching,
         )
+        f.write(f"- Frame valutati (stride={frame_stride}): {total_frames_evaluated}\n\n")
         f.write("Detector benchmark results\n\n")
         f.write(f"Config: {config_path}\n")
         f.write(f"Videos dir: {input_videos_dir}\n")
@@ -214,13 +222,16 @@ def benchmark_detector(config_path: str):
         f.write(f"IoU threshold: {iou_threshold}\n")
         f.write(f"Score threshold: {score_threshold}\n")
         f.write(f"Allow multiple predictions: {allow_multi}\n\n")
-        f.write(f"  - Matching method: {matching}\n")
         f.write(f"TP: {agg['tp']}\n")
         f.write(f"FP: {agg['fp']}\n")
         f.write(f"FN: {agg['fn']}\n\n")
         f.write(f"Precision: {agg['precision']:.6f}\n")
         f.write(f"Recall:    {agg['recall']:.6f}\n")
         f.write(f"F1-score:  {agg['f1']:.6f}\n")
+        f.write("\n- Prestazioni:\n")
+        f.write(f"  - Tempo totale: {elapsed_s:.2f} s\n")
+        f.write(f"  - Tempo medio per frame: {avg_ms_per_frame:.2f} ms\n")
+        f.write(f"  - FPS medio: {avg_fps:.2f}\n\n")
 
     print(f"[INFO] Risultati salvati in: {out_file}")
 
