@@ -1,6 +1,9 @@
 import argparse
 from pathlib import Path
 from datetime import datetime
+import platform
+import sys
+from datetime import datetime
 
 from src.pipeline.video_pipeline import load_config, build_detector_from_config
 from src.utils.io_utils import open_video
@@ -10,6 +13,36 @@ from src.evaluation.metrics import (
     aggregate_metrics,
     evaluate_frame_detections_center_based,
 )
+
+def write_benchmark_header(
+    f,
+    detector_name: str,
+    model_path: str,
+    num_videos: int,
+    total_frames: int,
+    iou_threshold: float,
+    score_threshold: float,
+    allow_multi: bool,
+    frame_stride: int,
+):
+    f.write("Questo test è stato eseguito nelle seguenti condizioni:\n")
+    f.write(f"- Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    f.write(f"- Hardware: {platform.processor()} (CPU)\n")
+    f.write(f"- Sistema operativo: {platform.system()} {platform.release()}\n")
+    f.write(f"- Python: {sys.version.split()[0]}\n")
+    f.write(f"- Detector: {detector_name}\n")
+    f.write(f"- Modello: {model_path}\n\n")
+
+    f.write("- Parametri:\n")
+    f.write(f"  - Score threshold: {score_threshold}\n")
+    f.write(f"  - IoU threshold: {iou_threshold}\n")
+    f.write(f"  - Allow multiple predictions: {allow_multi}\n")
+    f.write(f"  - Frame stride: {frame_stride}\n\n")
+
+    f.write("- Dataset:\n")
+    f.write(f"  - Numero video: {num_videos}\n")
+    f.write(f"  - Frame totali: {total_frames}\n")
+    f.write("\n")
 
 
 def benchmark_detector(config_path: str):
@@ -21,6 +54,11 @@ def benchmark_detector(config_path: str):
     video_cfg = cfg.get("video", {})
     det_name = cfg["detector"]["active"]
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    matching = str(eval_cfg.get("matching", "iou")).lower()
+    if matching not in {"iou", "center"}:
+        raise ValueError(f"[ERROR] evaluation.matching deve essere 'iou' o 'center', trovato: {matching}")
+
 
     input_videos_dir = Path(paths_cfg["input_videos"])
     gt_root = Path(paths_cfg["ground_truth"])
@@ -55,6 +93,9 @@ def benchmark_detector(config_path: str):
     if not video_files:
         print(f"[WARN] Nessun video trovato in {input_videos_dir}")
         return
+    
+    total_frames_dataset = 0
+    total_frames_evaluated = 0
 
     for video_path in video_files:
         print(f"\n[INFO] Video: {video_path.name}")
@@ -62,6 +103,9 @@ def benchmark_detector(config_path: str):
         # Apri video per ottenere dimensione frame
         cap, fps, (w, h), total_frames = open_video(str(video_path))
         print(f"      FPS: {fps:.2f}, Size: {w}x{h}, Frames: {total_frames}")
+
+        total_frames_dataset += total_frames
+        total_frames_evaluated += (total_frames + frame_stride - 1) // frame_stride
 
         # Carica GT per questo video (usa w,h per convertire YOLO -> pixel)
         frame_to_gt = load_video_ground_truth(
@@ -115,10 +159,19 @@ def benchmark_detector(config_path: str):
                 if gt_boxes and pred_boxes:
                     print("DEBUG IOU(gt0,pred0) =", compute_iou(gt_boxes[0], pred_boxes[0]))
 
-            tp, fp, fn = evaluate_frame_detections_center_based(
-                gt_boxes,
-                pred_boxes,
-            )
+            if matching == "iou":
+                tp, fp, fn = evaluate_frame_detections(
+                    gt_boxes,
+                    pred_boxes,
+                    iou_threshold=iou_threshold,
+                    allow_multiple_predictions=allow_multi,
+                )
+            else:  # matching == "center"
+                tp, fp, fn = evaluate_frame_detections_center_based(
+                    gt_boxes,
+                    pred_boxes,
+                )
+
 
             per_frame_stats.append({"tp": tp, "fp": fp, "fn": fn})
 
@@ -141,6 +194,18 @@ def benchmark_detector(config_path: str):
     # Salva su file
     out_file = results_root / f"benchmark_{det_name}_{ts}.txt" # timestamp per non sovrascrivere i file
     with open(out_file, "w", encoding="utf-8") as f:
+        write_benchmark_header(
+            f=f,
+            detector_name=det_name,
+            model_path=detector.model_path,
+            num_videos=len(video_files),
+            total_frames=total_frames,
+            iou_threshold=iou_threshold,
+            score_threshold=score_threshold,
+            allow_multi=allow_multi,
+            matching=matching,
+            frame_stride=frame_stride,
+        )
         f.write("Detector benchmark results\n\n")
         f.write(f"Config: {config_path}\n")
         f.write(f"Videos dir: {input_videos_dir}\n")
@@ -148,6 +213,7 @@ def benchmark_detector(config_path: str):
         f.write(f"IoU threshold: {iou_threshold}\n")
         f.write(f"Score threshold: {score_threshold}\n")
         f.write(f"Allow multiple predictions: {allow_multi}\n\n")
+        f.write(f"  - Matching method: {matching}\n")
         f.write(f"TP: {agg['tp']}\n")
         f.write(f"FP: {agg['fp']}\n")
         f.write(f"FN: {agg['fn']}\n\n")
