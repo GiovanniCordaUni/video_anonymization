@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from datetime import datetime
 
 from src.pipeline.video_pipeline import load_config, build_detector_from_config
 from src.utils.io_utils import open_video
@@ -7,6 +8,7 @@ from src.evaluation.ground_truth_loader import load_video_ground_truth
 from src.evaluation.metrics import (
     evaluate_frame_detections,
     aggregate_metrics,
+    evaluate_frame_detections_center_based,
 )
 
 
@@ -17,6 +19,8 @@ def benchmark_detector(config_path: str):
     paths_cfg = cfg["paths"]
     eval_cfg = cfg["evaluation"]
     video_cfg = cfg.get("video", {})
+    det_name = cfg["detector"]["active"]
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     input_videos_dir = Path(paths_cfg["input_videos"])
     gt_root = Path(paths_cfg["ground_truth"])
@@ -111,11 +115,9 @@ def benchmark_detector(config_path: str):
                 if gt_boxes and pred_boxes:
                     print("DEBUG IOU(gt0,pred0) =", compute_iou(gt_boxes[0], pred_boxes[0]))
 
-            tp, fp, fn = evaluate_frame_detections(
+            tp, fp, fn = evaluate_frame_detections_center_based(
                 gt_boxes,
                 pred_boxes,
-                iou_threshold=iou_threshold,
-                allow_multiple_predictions=allow_multi,
             )
 
             per_frame_stats.append({"tp": tp, "fp": fp, "fn": fn})
@@ -137,7 +139,7 @@ def benchmark_detector(config_path: str):
     print("=======================================")
 
     # Salva su file
-    out_file = results_root / "detector_benchmark.txt"
+    out_file = results_root / f"benchmark_{det_name}_{ts}.txt" # timestamp per non sovrascrivere i file
     with open(out_file, "w", encoding="utf-8") as f:
         f.write("Detector benchmark results\n\n")
         f.write(f"Config: {config_path}\n")
