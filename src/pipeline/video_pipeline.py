@@ -113,16 +113,29 @@ def build_detector_from_config(cfg: Dict[str, Any]):
     Si appoggia ai metodi .from_config delle classi wrapper.
     """
     # gestione device (cpu/cuda) automatica se impostato a "auto"
+    det_cfg = cfg.get("detector", {})
+    active = str(det_cfg.get("active", "")).lower()
+
+    if not active:
+        raise ValueError("[ERROR] Nel config manca detector.active")
+
+    if active not in det_cfg:
+        raise ValueError(f"[ERROR] Nel config manca la sezione detector.{active}")
+
     det_params = det_cfg[active]
-    device = det_params.get("device", "cpu")
+    device = str(det_params.get("device", "cpu")).lower()
 
-    if device == "cuda" and not torch.cuda.is_available():
-        print("[WARN] CUDA richiesta ma non disponibile. Uso CPU.")
-        det_params = dict(det_params)   # copia per non modificare il cfg originale
-        det_params["device"] = "cpu"
-
-    det_cfg = cfg["detector"]
-    active = det_cfg["active"].lower()
+    # Fallback CUDA -> CPU
+    if device in {"cuda", "cuda:0"}:
+        try:
+            if not torch.cuda.is_available():
+                print("[WARN] CUDA richiesta ma non disponibile. Uso CPU.")
+                det_params = dict(det_params)  # copia
+                det_params["device"] = "cpu"
+        except Exception:
+            print("[WARN] Torch/CUDA non disponibile. Uso CPU.")
+            det_params = dict(det_params)
+            det_params["device"] = "cpu"
 
     if active == "yolov8":
         return YoloV8Detector.from_config(det_cfg["yolov8"])
