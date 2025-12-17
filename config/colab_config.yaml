@@ -77,6 +77,10 @@ video:
 # EVALUATION / BENCHMARK
 # =========================
 evaluation:
+
+  # metodo di matching tra GT e predizioni: "iou" oppure "center"
+  matching: "iou"
+  
   # IoU threshold per considerare una detection come TP
   iou_threshold: 0.2
 

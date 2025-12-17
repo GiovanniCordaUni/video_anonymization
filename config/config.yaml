@@ -1,9 +1,9 @@
 paths:
-  input_videos: "data/input_videos"
-  output_videos: "data/output_videos"
-  ground_truth: "data/ground_truth"
-  predictions: "data/predictions"
-  results: "data/results"
+  input_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\organized_videos"
+  output_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\output"
+  ground_truth: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\ground_truth"
+  predictions: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\predictions"
+  results: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\results"
 
 video:
   frame_stride: 1          # 1 = usa tutti i frame
@@ -12,7 +12,7 @@ video:
   output_suffix: "_anon"   # suffisso per i video anonimizzati
 
 detector:
-  active: "yolov8"         # yolov8 / yolov12 / yunet / retinaface
+  active: "retinaface"         # yolov8 / yolov12 / yunet / retinaface
 
   yolov8:
     model_path: "models/yolov8/yolov8n-face.pt"
@@ -32,13 +32,14 @@ detector:
     face_class_id: 0
 
   retinaface:
-    conf_threshold: 0.8     # soglia di confidenza
+    conf_threshold: 0.5     # soglia di confidenza
     device: "cpu"           # "cpu" oppure "cuda"
     resize: 1.0             # parametro del wrapper per ridimensionare l'immagine di input
     max_size: 1080          # parametro per ridimensionare internamente
 
 evaluation:
-  iou_threshold: 0.5        # soglia IoU per TP
+  matching: "iou"          # "iou" oppure "center"
+  iou_threshold: 0.2        # soglia IoU per TP
   score_threshold: 0.5      # scarta predizioni con conf < score_threshold
   allow_multiple_predictions: true
 
