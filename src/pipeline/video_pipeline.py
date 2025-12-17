@@ -68,6 +68,7 @@ from pathlib import Path
 from typing import List, Tuple, Callable, Dict, Any, Optional
 
 import cv2
+import torch
 import yaml
 import numpy as np
 
@@ -111,6 +112,15 @@ def build_detector_from_config(cfg: Dict[str, Any]):
     Inizializza il detector leggendo la sezione `detector` del config.yaml.
     Si appoggia ai metodi .from_config delle classi wrapper.
     """
+    # gestione device (cpu/cuda) automatica se impostato a "auto"
+    det_params = det_cfg[active]
+    device = det_params.get("device", "cpu")
+
+    if device == "cuda" and not torch.cuda.is_available():
+        print("[WARN] CUDA richiesta ma non disponibile. Uso CPU.")
+        det_params = dict(det_params)   # copia per non modificare il cfg originale
+        det_params["device"] = "cpu"
+
     det_cfg = cfg["detector"]
     active = det_cfg["active"].lower()
 
