@@ -4,6 +4,8 @@ from datetime import datetime
 import platform
 import sys
 import time
+import json
+import shutil
 
 from src.pipeline.video_pipeline import load_config, build_detector_from_config
 from src.utils.io_utils import open_video
@@ -45,6 +47,50 @@ def write_benchmark_header(
     f.write(f"  - Frame totali: {total_frames}\n")
     f.write("\n")
 
+def make_run_dir(results_root: Path, det_name: str, matching: str, iou: float, score: float, stride: int) -> Path:
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    run_name = f"{ts}_bench_{det_name}_{matching}_iou{iou}_score{score}_s{stride}"
+    run_dir = results_root / run_name
+    run_dir.mkdir(parents=True, exist_ok=True)
+    return run_dir
+
+
+def make_logger(log_path: Path):
+    def log(msg: str):
+        print(msg)
+        with open(log_path, "a", encoding="utf-8") as lf:
+            lf.write(msg.rstrip() + "\n") #.rstrip() per evitare doppi newline
+    return log
+
+# Salva informazioni sull'ambiente in un file JSON
+def write_env_json(path: Path):
+    env = {
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "python": sys.version.split()[0],
+        "platform": platform.platform(),
+        "system": f"{platform.system()} {platform.release()}",
+        "processor": platform.processor(),
+    }
+
+    def safe_version(module_name: str):
+        try:
+            mod = __import__(module_name)
+            return getattr(mod, "__version__", "unknown")
+        except Exception:
+            return None
+
+    env["versions"] = {
+        "numpy": safe_version("numpy"),
+        "cv2": safe_version("cv2"),
+        "torch": safe_version("torch"),
+        "ultralytics": safe_version("ultralytics"),
+        "face_detection": safe_version("face_detection"),
+    }
+
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(env, f, indent=2, ensure_ascii=False)
+
+
 
 def benchmark_detector(config_path: str):
     # Carica config
@@ -71,14 +117,40 @@ def benchmark_detector(config_path: str):
     allow_multi = bool(eval_cfg.get("allow_multiple_predictions", False))
     frame_stride = int(video_cfg.get("frame_stride", 1))
 
-    print(f"[INFO] Config: {config_path}")
-    print(f"[INFO] Video di input (GT): {input_videos_dir}")
-    print(f"[INFO] Ground truth root:   {gt_root}")
-    print(f"[INFO] Results dir:         {results_root}")
-    print(f"[INFO] IoU threshold:       {iou_threshold}")
-    print(f"[INFO] Score threshold:     {score_threshold}")
-    print(f"[INFO] Allow multiple pred: {allow_multi}")
-    print(f"[INFO] Frame stride (eval): {frame_stride}")
+    # Crea cartella per questo run
+    run_dir = make_run_dir(
+        results_root=results_root,
+        det_name=det_name,
+        matching=matching,
+        iou=iou_threshold,
+        score=score_threshold,
+        stride=frame_stride,
+    )
+
+    log = make_logger(run_dir / "run.log")
+
+    # copia del config usato
+    try:
+        shutil.copy2(config_path, run_dir / "config_used.yaml")
+    except Exception as e:
+        log(f"[WARN] Impossibile copiare config: {e}")
+
+    # Salva info ambiente
+    try:
+        write_env_json(run_dir / "env.json")
+    except Exception as e:
+        log(f"[WARN] Impossibile scrivere env.json: {e}")
+
+
+    log(f"[INFO] Config: {config_path}")
+    log(f"[INFO] Video di input (GT): {input_videos_dir}")
+    log(f"[INFO] Ground truth root:   {gt_root}")
+    log(f"[INFO] Results dir:         {results_root}")
+    log(f"[INFO] IoU threshold:       {iou_threshold}")
+    log(f"[INFO] Score threshold:     {score_threshold}")
+    log(f"[INFO] Allow multiple pred: {allow_multi}")
+    log(f"[INFO] Frame stride (eval): {frame_stride}")
+    log(f"[INFO] run dir:              {run_dir}")
 
     # Inizializza detector da config
     detector = build_detector_from_config(cfg)
@@ -100,11 +172,11 @@ def benchmark_detector(config_path: str):
     total_frames_evaluated = 0
 
     for video_path in video_files:
-        print(f"\n[INFO] Video: {video_path.name}")
+        log(f"\n[INFO] Video: {video_path.name}")
 
         # Apri video per ottenere dimensione frame
         cap, fps, (w, h), total_frames = open_video(str(video_path))
-        print(f"      FPS: {fps:.2f}, Size: {w}x{h}, Frames: {total_frames}")
+        log(f"      FPS: {fps:.2f}, Size: {w}x{h}, Frames: {total_frames}")
 
         total_frames_dataset += total_frames
         total_frames_evaluated += (total_frames + frame_stride - 1) // frame_stride
@@ -201,7 +273,7 @@ def benchmark_detector(config_path: str):
     print("=======================================")
 
     # Salva su file
-    out_file = results_root / f"benchmark_{det_name}_{ts}.txt" # timestamp per non sovrascrivere i file
+    out_file = run_dir / f"benchmark_{det_name}_{ts}.txt" # timestamp per non sovrascrivere i file
     with open(out_file, "w", encoding="utf-8") as f:
         write_benchmark_header(
             f=f,
@@ -233,7 +305,7 @@ def benchmark_detector(config_path: str):
         f.write(f"  - Tempo medio per frame: {avg_ms_per_frame:.2f} ms\n")
         f.write(f"  - FPS medio: {avg_fps:.2f}\n\n")
 
-    print(f"[INFO] Risultati salvati in: {out_file}")
+    log(f"[INFO] Risultati salvati in: {out_file}")
 
 
 if __name__ == "__main__":
