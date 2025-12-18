@@ -12,18 +12,28 @@ Schema semplificato delle cartelle principali:
 
 ```text
 project/
-│  main.py
+│  main.py                     # entry-point CLI della pipeline
 │  README.md
 │
 ├─ config/
-│   └─ config.yaml          # configurazione detector/anonymizer/pipeline
+│   └─ config.yaml             # configurazione detector, anonymizer e pipeline
 │
 ├─ data/
 │   ├─ input/
-│   │   └─ videos/
-│   │       └─ DATASET/     # video grezzi di input
-│   └─ output/
-│       └─ videos/          # output anonimizzati (soggettoNNN/...)
+│   │   └─ videos/             # video grezzi originali
+│   │
+│   ├─ organized_videos/       # video rinominati/normalizzati
+│   │
+│   ├─ output/
+│   │   └─ videos/             # video anonimizzati 
+│   │
+│   ├─ ground_truth/           # annotazioni GT per valutazione detector
+│   │
+│   ├─ predictions/            # output grezzo dei detector (per benchmark)
+│   │
+│   ├─ results/                # metriche aggregate (CSV / XLSX / grafici)
+│   │
+│   └─ samples/                # esempi, subset o materiale di debug
 │
 ├─ models/
 │   ├─ yunet/
@@ -33,27 +43,35 @@ project/
 │   └─ yolov12/
 │       └─ yolov12n-face.pt
 │
-└─ src/
-    ├─ detectors/
-    │   ├─ yolo/
-    │   │   ├─ yolov8_detector.py
-    │   │   └─ yolov12_detector.py
-    │   ├─ yunet_detector.py
-    │   └─ retinaFace_detector.py
-    │
-    ├─ anonymizers/
-    │   ├─ gaussian_blur.py
-    │   ├─ pixelation.py
-    │   └─ black_mask.py
-    │
-    ├─ pipeline/
-    │   └─ video_pipeline.py
-    │
-    └─ utils/
-        ├─ io_utils.py
-        ├─ boxes_enlarge.py
-        ├─ dataset_organizer.py
-        └─ draw_utils.py        # opzionale, per debug/visualizzazione
+├─ scripts/
+│   └─ run_benchmark_detector.py   # script per valutazione detector
+│
+├─ src/
+│   ├─ detectors/
+│   │   ├─ yolo/
+│   │   │   ├─ yolov8_detector.py
+│   │   │   └─ yolov12_detector.py
+│   │   ├─ yunet_detector.py
+│   │   └─ retinaFace_detector.py
+│   │
+│   ├─ anonymizers/
+│   │   ├─ gaussian_blur.py
+│   │   ├─ pixelation.py
+│   │   └─ black_mask.py
+│   │
+│   ├─ pipeline/
+│   │   └─ video_pipeline.py   # core pipeline di elaborazione e anonimizzazione
+│   │
+│   ├─ evaluation/
+│   │   ├─ ground_truth_loader.py
+│   │   └─ metrics.py
+│   │
+│   └─ utils/
+│       ├─ io_utils.py
+│       ├─ boxes_enlarge.py
+│       ├─ dataset_organizer.py
+│       └─ draw_utils.py        # opzionale, solo per debug/visualizzazione
+
 ```
 
 # Diagramma di flusso della pipeline
