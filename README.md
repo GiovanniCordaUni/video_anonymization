@@ -54,3 +54,45 @@ project/
         ├─ boxes_enlarge.py
         ├─ dataset_organizer.py
         └─ draw_utils.py        # opzionale, per debug/visualizzazione
+```
+
+# Diagramma di flusso della pipeline
+
+```mermaid
+
+flowchart TD
+A[main.py<br/>CLI: --config --input --output]
+
+A --> B{args.input è<br/>una cartella?}
+
+B -->|Sì| C[run_dataset_from_config]
+B -->|No| D[run_single_as_dataset_from_config]
+
+C --> E[load_config]
+D --> E[load_config]
+
+E --> F[build_detector_from_config<br/>YuNet / RetinaFace / YOLOv8 / YOLOv12]
+F --> G[build_anonymizer_from_config<br/>blur / pixelate / black mask]
+
+G --> H[build_anon_output_path_dataset<br/>soggettoNNN/NNN_ex_session_anon.ext]
+
+H --> I[process_single_video]
+
+I --> J[open_video + create_video_writer]
+
+J --> K{Loop frame}
+
+K --> L[Detector<br/>ogni frame_stride]
+L --> M[Bounding boxes]
+
+M --> N[Anonimizzazione box<br/>enlarge + ellipse opzionale]
+
+N --> O[write frame]
+
+O --> K
+
+K -->|Fine video| P[Chiusura risorse input/output<br/>release VideoCapture and VideoWriter]
+
+P --> Q[Video anonimizzato salvato]
+
+```
