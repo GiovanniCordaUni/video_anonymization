@@ -12,7 +12,7 @@ video:
   output_suffix: "_anon"   # suffisso per i video anonimizzati
 
 detector:
-  active: "yolov8"         # yolov8 / yolov12 / yunet / retinaface
+  active: "yolov12"         # yolov8 / yolov12 / yunet / retinaface
 
   yolov8:
     model_path: "models/yolov8/yolov8n-face.pt"
@@ -38,7 +38,7 @@ detector:
     max_size: 1080          # parametro per ridimensionare internamente
 
 evaluation:
-  matching: "iou"          # "iou" oppure "center"
+  matching: "center"          # "iou" oppure "center"
   iou_threshold: 0.2        # soglia IoU per TP
   score_threshold: 0.5      # scarta predizioni con conf < score_threshold
   allow_multiple_predictions: true
