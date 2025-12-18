@@ -6,6 +6,7 @@ import sys
 import time
 import json
 import shutil
+import csv
 
 from src.pipeline.video_pipeline import load_config, build_detector_from_config
 from src.utils.io_utils import open_video
@@ -157,6 +158,8 @@ def benchmark_detector(config_path: str):
 
     per_frame_stats = []
     t0 = time.perf_counter()
+    # liste per CSV dettagliato
+    per_video_rows = []
 
     # Loop sui video nella cartella input_videos
     video_files = sorted(
@@ -171,8 +174,15 @@ def benchmark_detector(config_path: str):
     total_frames_dataset = 0
     total_frames_evaluated = 0
 
+    # per testing su un numero limitato di video
+    # video_files = video_files[:2]
     for video_path in video_files:
         log(f"\n[INFO] Video: {video_path.name}")
+        video_t0 = time.perf_counter()
+        video_tp = 0
+        video_fp = 0
+        video_fn = 0
+        video_frames_evaluated = 0
 
         # Apri video per ottenere dimensione frame
         cap, fps, (w, h), total_frames = open_video(str(video_path))
@@ -195,7 +205,7 @@ def benchmark_detector(config_path: str):
             if not ret:
                 break
 
-            # sottocampionamento per velocizzare
+            # sottofieldnamesonamento per velocizzare
             if frame_idx % frame_stride != 0:
                 frame_idx += 1
                 continue
@@ -245,6 +255,11 @@ def benchmark_detector(config_path: str):
                     gt_boxes,
                     pred_boxes,
                 )
+            
+            video_tp += tp
+            video_fp += fp
+            video_fn += fn
+            video_frames_evaluated += 1
 
 
             per_frame_stats.append({"tp": tp, "fp": fp, "fn": fn})
@@ -253,14 +268,64 @@ def benchmark_detector(config_path: str):
 
         cap.release()
 
+        video_t1 = time.perf_counter()
+        per_video_rows.append({
+            "video": video_path.name,
+            "tp": video_tp,
+            "fp": video_fp,
+            "fn": video_fn,
+            "frames_total": total_frames,
+            "frames_evaluated": video_frames_evaluated,
+            "time_s": round(video_t1 - video_t0, 4),
+        })
+
     # Aggrega risultati
     agg = aggregate_metrics(per_frame_stats)
 
     t1 = time.perf_counter()
-    elapsed_s = t1 - t0
+    elapsed_s = t1 - t0 # tempo totale
 
     avg_ms_per_frame = (elapsed_s / total_frames_evaluated) * 1000 if total_frames_evaluated > 0 else 0.0
     avg_fps = (total_frames_evaluated / elapsed_s) if elapsed_s > 0 else 0.0
+
+    # CSV per-video
+    per_video_csv = run_dir / "per_video.csv"
+    with open(per_video_csv, "w", newline="", encoding="utf-8") as fcsv:
+        fieldnames = ["video", "tp", "fp", "fn", "frames_total", "frames_evaluated", "time_s"]
+        wcsv = csv.DictWriter(fcsv, fieldnames=fieldnames)
+        wcsv.writeheader()
+        wcsv.writerows(per_video_rows)
+
+    # CSV summary
+    summary_csv = run_dir / "summary.csv"
+    with open(summary_csv, "w", newline="", encoding="utf-8") as fsum:
+        fieldnames = [
+            "detector", "matching", "iou_threshold", "score_threshold", "allow_multiple_predictions", "frame_stride",
+            "tp", "fp", "fn", "precision", "recall", "f1",
+            "total_time_s", "avg_time_per_frame_ms", "fps", "videos", "frames_total", "frames_evaluated"
+        ]
+        wsum = csv.DictWriter(fsum, fieldnames=fieldnames)
+        wsum.writeheader()
+        wsum.writerow({
+            "detector": det_name,
+            "matching": matching,
+            "iou_threshold": iou_threshold,
+            "score_threshold": score_threshold,
+            "allow_multiple_predictions": allow_multi,
+            "frame_stride": frame_stride,
+            "tp": agg["tp"],
+            "fp": agg["fp"],
+            "fn": agg["fn"],
+            "precision": round(agg["precision"], 6),
+            "recall": round(agg["recall"], 6),
+            "f1": round(agg["f1"], 6),
+            "total_time_s": round(elapsed_s, 4),
+            "avg_time_per_frame_ms": round(avg_ms_per_frame, 4),
+            "fps": round(avg_fps, 4),
+            "videos": len(video_files),
+            "frames_total": total_frames_dataset,
+            "frames_evaluated": total_frames_evaluated,
+        })
 
 
     print("\n========== RISULTATI GLOBALI ==========")
@@ -273,7 +338,7 @@ def benchmark_detector(config_path: str):
     print("=======================================")
 
     # Salva su file
-    out_file = run_dir / f"benchmark_{det_name}_{ts}.txt" # timestamp per non sovrascrivere i file
+    out_file = run_dir / f"benchmark_{det_name}.txt" # timestamp per non sovrascrivere i file
     with open(out_file, "w", encoding="utf-8") as f:
         write_benchmark_header(
             f=f,
@@ -306,6 +371,8 @@ def benchmark_detector(config_path: str):
         f.write(f"  - FPS medio: {avg_fps:.2f}\n\n")
 
     log(f"[INFO] Risultati salvati in: {out_file}")
+    log(f"[INFO] CSV per-video: {per_video_csv}")
+    log(f"[INFO] CSV summary:   {summary_csv}")
 
 
 if __name__ == "__main__":
