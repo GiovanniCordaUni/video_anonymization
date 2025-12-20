@@ -4,6 +4,18 @@ Pipeline modulare per l'anonimizzazione di video tramite rilevatori di volto (Yu
 
 La struttura del progetto è estensibile, i componenti sono separati per funzionalità (detector, anonymizer, utilità I/O, organizzazione dataset) ed è presente un unico `main.py` come entry point.
 
+NOTA: I pesi dei modelli di face detection non sono inclusi nella repository e devono essere scaricati manualmente e preferibilmente organizzati come secondo la struttura "models" sotto descritta, o in alternativa coerenti con quelli passati nel file config.yaml.
+
+```text
+YuNet: wget https://github.com/opencv/opencv_zoo/blob/master/models/face_detection_yunet/face_detection_yunet_2023mar.onnx?raw=1 -O face_detection_yunet_2023mar.onnx
+
+YoloV8n-face: wget -O yolov8n-face.pt "https://github.com/YapaLab/yolo-face/releases/download/v0.0.0/yolov8n-face.pt"
+
+YoloV12n-face: wget -O yolov12n-face.pt "https://github.com/YapaLab/yolo-face/releases/download/v0.0.0/yolov12n-face.pt"
+
+```
+
+
 ---
 
 ## Struttura del progetto
