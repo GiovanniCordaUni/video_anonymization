@@ -29,12 +29,12 @@ Funzionalità principali:
 Output e struttura delle cartelle:
     - Per i casi "dataset" (input = cartella), il nome del file di output viene
       derivato dal file di input (es. "4sst-Andrea1.mp4") e convertito nella forma
-      "NNN_Excod_sessionX_anon.ext", dove:
+      "NNN_Excod_sessionX.ext", dove:
         - NNN  = ID numerico progressivo del soggetto,
         - Excod = codice univoco dell'esercizio (es. "4sst"),
         - X = numero della sessione registrata per lo stesso tipo di esercizio.
       I file sono organizzati in sottocartelle:
-            output_root/soggettoNNN/NNN_Excod_sessionX_anon.ext
+            output_root/soggettoNNN/NNN_Excod_sessionX.ext
 
 Formati supportati:
     - Video: .mp4, .avi, .mov, .mkv
@@ -303,7 +303,7 @@ def run_single_from_config(
 
 
 
-# costruisce path output (soggettoNNN/NNN_exercise_session_anon)
+# costruisce path output (soggettoNNN/NNN_exercise_session.ext) per dataset
 def build_anon_output_path_dataset(
     input_video_path: str,
     output_root: str,
@@ -312,14 +312,14 @@ def build_anon_output_path_dataset(
 ):
     """
     Costruisce il path di output con struttura:
-        output_root/soggettoNNN/NNN_exercise_session_anon.ext
+        output_root/soggettoNNN/NNN_exercise_session.ext
 
     Usando la stessa logica di dataset_organizer._parse_name, la funzione
     si limita a restituire il path target per il video anonimizzato
     e aggiorna la mappa soggetto->ID.
 
     Esempio:
-        4sst-Andrea1.mp4 -> soggetto001/001_4sst_1_anon.mp4
+        4sst-Andrea1.mp4 -> soggetto001/001_4sst_1.mp4
     """
     src = Path(input_video_path)
     output_root = Path(output_root)
@@ -339,8 +339,7 @@ def build_anon_output_path_dataset(
     subject_dir = output_root / f"soggetto{sid_str}"
     subject_dir.mkdir(parents=True, exist_ok=True)
 
-    # suffisso _anon per distinguere i video anonimizzati
-    dst_name = f"{sid_str}_{exercise}_{session}_anon{src.suffix}"
+    dst_name = f"{sid_str}_{exercise}_{session}{src.suffix}"
     dst = subject_dir / dst_name
 
     return str(dst), subject_to_id, next_id
@@ -358,7 +357,7 @@ def run_dataset_from_config(
     1) Prende una cartella di input (es. DATASET) con video tipo:
            4sst-Andrea1.mp4, 4sst-Luca1.mp4, ...
     2) Per ogni video, calcola il path destinazione nello stile:
-           output_root/soggettoNNN/NNN_4sst_1_anon.mp4
+           output_root/soggettoNNN/NNN_4sst_1.mp4
     3) Esegue l'anonimizzazione e salva direttamente il video anonimizzato
        nel path calcolato.
 
@@ -419,7 +418,7 @@ def run_single_as_dataset_from_config(
     mini-dataset di un solo file.
 
     Output:
-        output_root/soggettoNNN/NNN_exercise_session_anon.ext
+        output_root/soggettoNNN/NNN_exercise_session.ext
     """
     cfg = load_config(config_path)
     detector = build_detector_from_config(cfg)
