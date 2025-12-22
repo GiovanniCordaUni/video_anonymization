@@ -108,9 +108,9 @@ def benchmark_detector(config_path: str):
         raise ValueError(f"[ERROR] evaluation.matching deve essere 'iou' o 'center', trovato: {matching}")
 
 
-    input_videos_dir = Path(paths_cfg["input_videos"])
+    input_videos_dir = Path(paths_cfg["bench_input_videos"])
     gt_root = Path(paths_cfg["ground_truth"])
-    results_root = Path(paths_cfg["results"])
+    results_root = Path(paths_cfg["bench_results"])
     results_root.mkdir(parents=True, exist_ok=True)
 
     iou_threshold = float(eval_cfg.get("iou_threshold", 0.5))
