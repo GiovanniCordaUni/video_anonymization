@@ -1,9 +1,10 @@
 paths:
-  input_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\organized_videos"
+  input_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\DATASET"
+  bench_input_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\organized_videos2"
   output_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\output"
-  ground_truth: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\ground_truth"
+  ground_truth: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\ground_truth2"
   predictions: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\predictions"
-  results: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\results"
+  bench_results: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\results"
 
 video:
   frame_stride: 1          # 1 = usa tutti i frame
@@ -12,7 +13,7 @@ video:
   output_suffix: "_anon"   # suffisso per i video anonimizzati
 
 detector:
-  active: "yolov12"         # yolov8 / yolov12 / yunet / retinaface
+  active: "yolov8"         # yolov8 / yolov12 / yunet / retinaface
 
   yolov8:
     model_path: "models/yolov8/yolov8n-face.pt"
@@ -39,7 +40,7 @@ detector:
 
 evaluation:
   matching: "center"          # "iou" oppure "center"
-  iou_threshold: 0.2        # soglia IoU per TP
+  iou_threshold: 0.5        # soglia IoU per TP
   score_threshold: 0.5      # scarta predizioni con conf < score_threshold
   allow_multiple_predictions: true
 
