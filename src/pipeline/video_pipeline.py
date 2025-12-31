@@ -73,6 +73,7 @@ import yaml
 import numpy as np
 
 # Detector
+from src.detectors.detection_types import Detection
 from src.detectors.yolo.yolov8_detector import YoloV8Detector
 from src.detectors.yolo.yolov12_detector import YoloV12Detector
 from src.detectors.yunet_detector import YuNetDetector
@@ -87,6 +88,7 @@ from src.anonymizers.black_mask import apply_black_mask, apply_oval_black_mask
 from src.utils.io_utils import open_video, create_video_writer  # 
 from src.utils.boxes_enlarge import enlarge_box                # 
 from src.utils.dataset_organizer import _parse_name            # 
+from src.utils.temporal_boxes import apply_box_hysteresis   #
 # from src.utils.draw_utils import draw_boxes   # opzionale, per debug
 
 VIDEO_EXT = {".mp4", ".avi", ".mov", ".mkv"}
@@ -230,6 +232,7 @@ def process_single_video(
     Elabora un singolo video:
       - legge i frame con open_video
       - applica il detector
+      - applica isteresi temporale alle box (per colmare buchi brevi del detector)
       - anonimizza le box
       - scrive il risultato con create_video_writer
     """
@@ -240,12 +243,32 @@ def process_single_video(
     writer = create_video_writer(output_video_path, fps, (width, height))
     print(f"[INFO] Output: {output_video_path}")
 
+    # parametri hysteresis (sezione suggerita nel config.yaml)
+    t_cfg = cfg.get("temporal_smoothing", {})
+    hysteresis_enabled = bool(t_cfg.get("enabled", True))
+    max_gap_frames = int(t_cfg.get("max_gap_frames", 2))
+    padding_ratio = float(t_cfg.get("padding_ratio", 0.10))
+    padding_px = int(t_cfg.get("padding_px", 0))
+    min_area_px = int(t_cfg.get("min_area_px", 0))
+
     # parametri video opzionali dal config
     v_cfg = cfg.get("video", {})
     frame_stride = int(v_cfg.get("frame_stride", 1)) # processa ogni N frame
 
     frame_idx = 0
-    last_boxes: Optional[List[Tuple[int, int, int, int]]] = None
+    #last_boxes: Optional[List[Tuple[int, int, int, int]]] = None
+    # stato per isteresi (basato su Detection)
+    last_valid_detections: Optional[List[Detection]] = None
+    gap_frames = 0
+
+    stats = {
+    "frames_total": 0,
+    "run_detection_frames": 0,
+    "frames_with_detections": 0,
+    "frames_no_detections": 0,
+    "frames_inherited": 0,
+    "max_gap": 0,
+    }
 
     while True:
         ret, frame = cap.read()
@@ -255,27 +278,77 @@ def process_single_video(
         run_detection = (frame_idx % frame_stride == 0)
 
         if run_detection:
-            # usa detect_boxes se presente, altrimenti converte da Detection
-            if hasattr(detector, "detect_boxes"):
-                boxes = detector.detect_boxes(frame)
-            else:
-                detections = detector.detect(frame)
-                boxes = [(d.x1, d.y1, d.x2, d.y2) for d in detections]
+            stats["run_detection_frames"] += 1
 
-            last_boxes = boxes
+            if hasattr(detector, "detect_boxes"):
+                boxes = detector.detect_boxes(frame) or []
+                current_detections = [
+                    Detection(x1=x1, y1=y1, x2=x2, y2=y2, confidence=1.0, class_id=0)
+                    for (x1, y1, x2, y2) in boxes
+                ]
+            else:
+                current_detections = detector.detect(frame) or []
+
+            # stats detections (vale per entrambi i casi)
+            if len(current_detections) > 0:
+                stats["frames_with_detections"] += 1
+            else:
+                stats["frames_no_detections"] += 1
+
+            if hysteresis_enabled:
+                (
+                    final_detections,
+                    last_valid_detections,
+                    gap_frames,
+                    used_inheritance,
+                ) = apply_box_hysteresis(
+                    current_detections=current_detections,
+                    last_valid_detections=last_valid_detections,
+                    gap_frames=gap_frames,
+                    max_gap_frames=max_gap_frames,
+                    padding_ratio=padding_ratio,
+                    padding_px=padding_px,
+                    frame_size=(width, height),
+                    min_area_px=min_area_px,
+                )
+
+                if used_inheritance:
+                    stats["frames_inherited"] += 1
+                stats["max_gap"] = max(stats["max_gap"], gap_frames)
+
+                detections_to_blur = final_detections
+            else:
+                detections_to_blur = current_detections
+                last_valid_detections = current_detections
+                gap_frames = 0 if current_detections else (gap_frames + 1)
+
         else:
-            boxes = last_boxes or []
+            # boxes = last_boxes or []
+            # frame saltato dal detector (frame_stride):
+            detections_to_blur = last_valid_detections or []
+
+        #converti in box (tuple) per l'anonymizer
+        boxes_to_blur = [(d.x1, d.y1, d.x2, d.y2) for d in detections_to_blur]
 
         # applica l'anonimizzazione su tutte le box
-        for box in boxes:
+        # for box in boxes:
+        #     frame = anonymizer_fn(frame, box)
+        for box in boxes_to_blur:
             frame = anonymizer_fn(frame, box)
 
+        stats["frames_total"] += 1
         writer.write(frame)
         frame_idx += 1
 
     cap.release()
     writer.release()
-    print(f"[INFO] Completato: {output_video_path}")
+    # print("[STATS] frames_total:", stats["frames_total"])
+    # print("[STATS] run_detection_frames:", stats["run_detection_frames"])
+    # print("[STATS] frames_with_detections:", stats["frames_with_detections"])
+    # print("[STATS] frames_no_detections:", stats["frames_no_detections"])
+    # print("[STATS] frames_inherited:", stats["frames_inherited"])
+    # print("[STATS] max_gap_seen:", stats["max_gap"])
+    # print(f"[INFO] Completato: {output_video_path}")
 
 
 # modalità singolo video: input file -> output file
