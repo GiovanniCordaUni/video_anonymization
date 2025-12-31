@@ -1,10 +1,18 @@
+# paths:
+#   input_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\DATASET"
+#   bench_input_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\organized_videos2"
+#   output_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\output"
+#   ground_truth: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\ground_truth2"
+#   predictions: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\predictions"
+#   bench_results: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\results"
+
 paths:
-  input_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\DATASET"
-  bench_input_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\organized_videos2"
-  output_videos: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\output"
-  ground_truth: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\ground_truth2"
-  predictions: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\predictions"
-  bench_results: "C:\\Users\\giova\\OneDrive\\Desktop\\tesi\\project\\data\\results"
+  input_videos: "data/input/videos/DATASET/TUG-Ragazzo-blu1.mp4"
+  bench_input_videos: "data/organized_videos2"
+  output_videos: "data/output"
+  ground_truth: "data/ground_truth2"
+  predictions: "data/predictions"
+  bench_results: "data/results"
 
 video:
   frame_stride: 1          # 1 = usa tutti i frame
@@ -36,10 +44,17 @@ detector:
     conf_threshold: 0.5     # soglia di confidenza
     device: "cpu"           # "cpu" oppure "cuda"
     resize: 1.0             # parametro del wrapper per ridimensionare l'immagine di input
-    max_size: 1080          # parametro per ridimensionare internamente
+    max_size: 1080          # parametro per ridimensionare internamente 
+
+temporal_smoothing:
+  enabled: true
+  max_gap_frames: 5       # massimo numero di frame senza rilevazioni da colmare
+  padding_ratio: 0.10     # padding come frazione della dimensione box
+  padding_px: 0           # padding in pixel (sovrascrive padding_ratio se > 0)
+  min_area_px: 0          # area minima in pixel per una bounding box ereditata se necessario
 
 evaluation:
-  matching: "center"          # "iou" oppure "center"
+  matching: "iou"          # "iou" oppure "center"
   iou_threshold: 0.5        # soglia IoU per TP
   score_threshold: 0.5      # scarta predizioni con conf < score_threshold
   allow_multiple_predictions: true
