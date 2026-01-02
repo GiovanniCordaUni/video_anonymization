@@ -82,7 +82,8 @@ project/
 │       ├─ io_utils.py
 │       ├─ boxes_enlarge.py
 │       ├─ dataset_organizer.py
-│       └─ draw_utils.py        # opzionale, solo per debug/visualizzazione
+|       ├─ temporal_boxes.py # aumenta la precisione del detector con la tecnica dell'isteresi delle box
+│       └─ draw_utils.py        # opzionale, solo per debug/visualizzazione     
 
 ```
 
@@ -91,9 +92,9 @@ project/
 ```mermaid
 
 flowchart TD
-A[main.py<br/>CLI: --config --input --output]
+A[main.py<br/>CLI: --config --input --output<br/>o path da config]
 
-A --> B{args.input è<br/>una cartella?}
+A --> B{args.input\path è<br/>una cartella?}
 
 B -->|Sì| C[run_dataset_from_config]
 B -->|No| D[run_single_as_dataset_from_config]
@@ -113,16 +114,21 @@ I --> J[open_video + create_video_writer]
 J --> K{Loop frame}
 
 K --> L[Detector<br/>ogni frame_stride]
-L --> M[Bounding boxes]
 
-M --> N[Anonimizzazione box<br/>enlarge + ellipse opzionale]
+L --> M{Volto rilevato?}
+M -->|Sì| N[Bounding boxes]
+M -->|No| O{frame vuoti <  N?}
 
-N --> O[write frame]
+O --> |Si| P[usa box precedente<br/>N++]
+O --> |No| K
 
-O --> K
+N --> Q[Anonimizzazione box<br/>enlarge + ellipse opzionale]
+P --> Q
+Q --> R[write frame]
+R --> K
 
-K -->|Fine video| P[Chiusura risorse input/output<br/>release VideoCapture and VideoWriter]
+K -->|Fine video| S[Chiusura risorse input/output<br/>release VideoCapture and VideoWriter]
 
-P --> Q[Video anonimizzato salvato]
+S --> T[Video anonimizzato salvato]
 
 ```
